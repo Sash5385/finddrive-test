@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.token.email == 'sash5385@gmail.com';
+    }
+
+    function instrDoc(instrId) {
+      return get(/databases/$(database)/documents/instructors/$(instrId)).data;
+    }
+
+    function isInstructor(instrId) {
+      return request.auth != null
+          && instrId != null
+          && instrId != ''
+          && (instrDoc(instrId).userId == request.auth.uid
+              || instrDoc(instrId).email == request.auth.token.email);
+    }
+
+    match /instructors/{docId} {
+      allow get: if isAdmin()
+              || resource.data.status == 'approved'
+              || (request.auth != null && resource.data.userId == request.auth.uid)
+              || (request.auth != null && resource.data.email == request.auth.token.email);
+      allow list: if isAdmin()
+               || resource.data.status == 'approved'
+               || (request.auth != null && resource.data.userId == request.auth.uid)
+               || (request.auth != null && resource.data.email == request.auth.token.email);
+      allow create: if request.resource.data.status == 'pending';
+      allow update: if isAdmin()
+                 || (request.auth != null
+                     && resource.data.userId == request.auth.uid
+                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
+                 || (request.auth != null
+                     && resource.data.email == request.auth.token.email
+                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
+                 || (request.auth != null
+                     && resource.data.userId == null
+                     && resource.data.email == request.auth.token.email
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userId']))
+                 || (request.auth != null
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviews']));
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAdmin();
+    }
+
+    match /bookings/{bookingId} {
+      // Публічний доступ прибрано — тут ПІБ/телефон/email клієнта й інструктора, точка зустрічі.
+      // Анонімний перегляд зайнятих слотів реалізовано через окрему публічну колекцію bookingSlots
+      // (без персональних даних), яку наповнює Cloud Function mirrorBookingSlot.
+      allow read: if isAdmin()
+               || (request.auth != null && resource.data.clientId == request.auth.uid)
+               || isInstructor(resource.data.instructorId);
+      allow create: if request.auth != null
+                    && request.resource.data.clientId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+      allow update: if request.auth != null
+                    && resource.data.clientId == request.auth.uid
+                    && request.resource.data.status == 'cancelled'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledBy']);
+      allow update: if isInstructor(resource.data.instructorId)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'date', 'time', 'proposedDate', 'proposedTime']);
+      allow update: if request.auth != null
+                    && resource.data.clientId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewed']);
+      allow delete: if isAdmin();
+    }
+
+    match /bookingSlots/{id} {
+      // Публічний "зліпок" bookings без персональних даних — лише instructorId/date/time/duration/status.
+      // Пише виключно Cloud Function mirrorBookingSlot через Admin SDK (обходить ці правила),
+      // тому пряме клієнтське write заборонено.
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.clientId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /problems/{problemId} {
+      allow create: if request.resource.data.status == 'new'
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() < 3000;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow get: if request.auth != null
+                 && (resource.data.studentId == request.auth.uid
+                     || resource.data.instrUserId == request.auth.uid
+                     || resource.data.instrEmail == request.auth.token.email);
+      allow list: if request.auth != null
+                  && (resource.data.studentId == request.auth.uid
+                      || resource.data.instrUserId == request.auth.uid
+                      || resource.data.instrEmail == request.auth.token.email);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                    && (resource.data.studentId == request.auth.uid
+                        || resource.data.instrUserId == request.auth.uid
+                        || resource.data.instrEmail == request.auth.token.email);
+    }
+
+    match /chats/{chatId}/messages/{msgId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+  }
+}

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>FindDrive — Адмін</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1a7a4a;--green-dark:#0d4a2a;--green-light:#e8f4ee;
+  --bg:#f0f2f0;--white:#fff;--text:#0d2a1a;--text-muted:#5a7a6a;--text-hint:#7a9a8a;
+  --border:#dde8dd;--pink:#993556;--pink-light:#fbeaf0;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+
+/* NAV */
+.nav{background:var(--white);border-bottom:.5px solid var(--border);padding:0 40px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.nav-title{font-size:14px;font-weight:600;color:var(--text)}
+.nav-badge{font-size:11px;background:#fff3cd;color:#856404;border-radius:5px;padding:2px 8px;font-weight:500}
+.btn-signout{font-size:13px;color:var(--text-muted);background:none;border:.5px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;font-family:inherit;transition:border-color .2s,color .2s}
+.btn-signout:hover{border-color:#cc3333;color:#cc3333}
+
+/* AUTH GATE */
+.gate{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:16px;text-align:center;padding:24px}
+.gate-logo{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px}
+.gate h2{font-size:20px;font-weight:600}
+.gate p{font-size:14px;color:var(--text-muted)}
+.btn-google{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:box-shadow .2s}
+.btn-google:hover{box-shadow:0 2px 12px rgba(0,0,0,.1)}
+.btn-google svg{width:20px;height:20px;flex-shrink:0}
+
+/* ADMIN PANEL */
+.wrap{max-width:860px;margin:0 auto;padding:32px 24px}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:600}
+.count-badge{background:var(--pink-light);color:var(--pink);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:500}
+.empty{text-align:center;padding:60px 24px;color:var(--text-hint);font-size:14px}
+.denied{text-align:center;padding:60px 24px}
+.denied h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.denied p{font-size:13px;color:var(--text-muted);margin-bottom:16px}
+
+/* TABS */
+.tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:.5px solid var(--border);flex-wrap:wrap}
+.tab-btn{background:none;border:none;padding:10px 4px;margin-right:20px;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+.tab-btn .count-badge{margin-left:6px}
+
+/* PROBLEM CARDS */
+.problem-card{background:var(--white);border-radius:16px;border:.5px solid var(--border);padding:18px 20px;margin-bottom:12px}
+.problem-card.resolved{opacity:.55}
+.problem-text{font-size:14px;color:var(--text);line-height:1.55;margin-bottom:8px;white-space:pre-wrap}
+.problem-meta{font-size:12px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.problem-actions{display:flex;gap:8px}
+.btn-approve{background:var(--green);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s;white-space:nowrap}
+.btn-approve:hover{background:var(--green-dark)}
+.btn-reject{background:none;border:.5px solid var(--border);border-radius:9px;padding:9px 16px;font-size:13px;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:border-color .2s,color .2s;white-space:nowrap}
+.btn-reject:hover{border-color:#cc3333;color:#cc3333}
+
+/* CRITICAL-MASS GAUGE (тригер запуску монетизації — див. MONETIZATION.md §2) */
+.cm-gauge{background:var(--white);border:1px solid #000;border-radius:18px;padding:16px 18px;margin-bottom:18px}
+.cm-gauge-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.cm-gauge-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.cm-gauge-title i{color:var(--green)}
+.cm-gauge-target{font-size:11px;color:var(--text-muted)}
+.cm-gauge-stats{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px}
+.cm-stat{display:flex;flex-direction:column;gap:1px}
+.cm-stat-num{font-size:22px;font-weight:700;color:var(--green);line-height:1}
+.cm-stat-lbl{font-size:11px;color:var(--text-muted)}
+.cm-stat.muted .cm-stat-num{color:var(--text-muted)}
+.cm-bar{height:9px;border-radius:20px;background:var(--green-light);overflow:hidden;border:.5px solid var(--border)}
+.cm-bar-fill{height:100%;background:var(--green);border-radius:20px;transition:width .4s ease}
+.cm-bar-fill.ready{background:var(--pink)}
+.cm-gauge-note{font-size:11px;color:var(--text-hint);margin-top:8px;line-height:1.5}
+.cm-gauge-note.ready{color:var(--pink);font-weight:500}
+
+/* ADMIN CARDS (instructors / users / bookings) */
+.admin-header{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-hint);font-weight:500;margin:16px 0 10px;display:flex;align-items:center;gap:7px}
+.admin-header::before{content:'';flex:1;height:.5px;background:var(--border)}
+.admin-badge-cnt{background:var(--pink);color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600;letter-spacing:0}
+.admin-card{background:var(--white);border:.5px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.admin-card-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;transition:background .15s}
+.admin-card-head:hover{background:var(--bg)}
+.admin-card-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;background:var(--green-light);color:var(--green)}
+.admin-card-main{flex:1;min-width:0}
+.admin-card-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-card-sub{font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-status{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.admin-status.pending{background:#fff3cd;color:#856404}
+.admin-status.approved{background:var(--green-light);color:var(--green)}
+.admin-status.rejected{background:#fde8e8;color:#8a2020}
+.admin-card-arrow{font-size:14px;color:var(--text-hint);transition:transform .2s;flex-shrink:0}
+.admin-card.open .admin-card-arrow{transform:rotate(180deg)}
+.admin-card-body{display:none;padding:0 14px 14px;border-top:.5px solid var(--border)}
+.admin-card.open .admin-card-body{display:block}
+.admin-field{display:flex;gap:8px;font-size:12px;margin-top:9px;align-items:flex-start}
+.admin-field-label{color:var(--text-muted);flex-shrink:0;width:90px;padding-top:1px}
+.admin-field-val{color:var(--text);word-break:break-word;flex:1}
+.admin-photos{display:flex;gap:10px;margin-top:12px}
+.admin-photo{width:72px;height:72px;border-radius:10px;object-fit:cover;border:.5px solid var(--border);background:var(--bg)}
+.admin-photo-label{font-size:10px;color:var(--text-muted);text-align:center;margin-top:3px}
+.admin-actions{display:flex;gap:8px;margin-top:14px}
+.admin-btn{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.admin-btn:hover{opacity:.8}
+.admin-btn.approve{background:var(--green);color:#fff}
+.admin-btn.reject{background:#fde8e8;color:#8a2020;border:.5px solid #e0a8a8}
+.admin-btn.delete{background:#fde8e8;color:#8a2020;border:.5px solid #e0a8a8;flex:0;white-space:nowrap}
+.admin-tag{display:inline-flex;align-items:center;border-radius:20px;border:.5px solid;font-size:10px;padding:2px 8px;margin:2px 2px 0 0}
+.bk-status{border-radius:20px;padding:2px 9px;font-size:11px;font-weight:500;flex-shrink:0;display:inline-flex;align-items:center;gap:3px}
+.bk-status.pending{background:#fff3cd;color:#856404}
+.bk-status.confirmed{background:var(--green-light);color:var(--green)}
+.bk-status.cancelled{background:var(--bg);color:var(--text-hint);border:.5px solid var(--border)}
+.bk-status.reschedule_requested{background:#fff3cd;color:#856404}
+
+/* TOAST */
+#toast-wrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--white);border:1px solid #000;border-radius:12px;padding:12px 14px;max-width:320px;box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;gap:10px;align-items:flex-start;pointer-events:auto;animation:toastIn .2s ease}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.toast-title{font-size:13px;font-weight:600;color:var(--text)}
+.toast-text{font-size:12px;color:var(--text-muted);margin-top:2px}
+.toast-icon{color:var(--green);font-size:16px;flex-shrink:0}
+
+@media(max-width:600px){.admin-field{flex-direction:column;gap:2px}.admin-field-label{width:auto}}
+</style>
+</head>
+<body>
+
+<div id="toast-wrap"></div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <img src="logo192.png" alt="FindDrive">
+    <span class="nav-title">FindDrive</span>
+  </a>
+  <span class="nav-badge">Адмін-панель</span>
+  <button id="btn-signout" class="btn-signout" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Вийти</button>
+</nav>
+
+<div id="auth-gate" class="gate">
+  <img class="gate-logo" src="logo192.png" alt="">
+  <h2>Вхід для адміністратора</h2>
+  <p>Доступ тільки для авторизованого власника</p>
+  <button id="btn-google-login" class="btn-google">
+    <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 33 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.9 29.3 5 24 5 12.4 5 3 14.4 3 26s9.4 21 21 21c11 0 20-8 20-21 0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 15.1l6.6 4.8C14.6 16.1 19 13 24 13c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.9 29.3 5 24 5c-7.7 0-14.4 4.4-17.7 10.1z"/><path fill="#4CAF50" d="M24 47c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 38.5 26.8 39.5 24 39.5c-5.2 0-9.6-3.6-11.2-8.5l-6.5 5C9.7 43 16.4 47 24 47z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l.1-.1 6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.3-.1-2.6-.4-3.9z"/></svg>
+    Увійти через Google
+  </button>
+</div>
+
+<div id="admin-panel" style="display:none">
+  <div class="wrap">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-btn-instr" onclick="window._switchTab('instr')">Інструктори<span id="count-badge-instr" class="count-badge" style="display:none"></span></button>
+      <button class="tab-btn" id="tab-btn-users" onclick="window._switchTab('users')">Учні</button>
+      <button class="tab-btn" id="tab-btn-bookings" onclick="window._switchTab('bookings')">Записи</button>
+      <button class="tab-btn" id="tab-btn-problems" onclick="window._switchTab('problems')">Проблеми<span id="count-badge-problems" class="count-badge" style="display:none"></span></button>
+    </div>
+    <div id="tab-instr">
+      <div class="page-head"><div class="page-title">Інструктори</div></div>
+      <div id="cm-gauge"></div>
+      <div id="instr-list"></div>
+    </div>
+    <div id="tab-users" style="display:none">
+      <div class="page-head"><div class="page-title">Учні</div></div>
+      <div id="users-list"></div>
+    </div>
+    <div id="tab-bookings" style="display:none">
+      <div class="page-head"><div class="page-title">Усі записи</div></div>
+      <div id="bookings-list"></div>
+    </div>
+    <div id="tab-problems" style="display:none">
+      <div class="page-head">
+        <div class="page-title">Звернення про проблеми</div>
+      </div>
+      <div id="problems-list"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, query, where, orderBy, onSnapshot, updateDoc, deleteDoc, doc, setDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const ADMIN_EMAIL = 'sash5385@gmail.com';
+const VAPID_KEY = 'BGSuM0lNQTvXWAx6H8m1ORaBOWVajW0XFz8bRA39VzBW7dToZ-bsXnL9TTd1kACItrCMbi_HhXATND-MhQ0cpGY';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAr-Q8ojscCoMLXNAKNjqbGrqw0JN6_mbo",
+  authDomain: "finddrive-b009d.firebaseapp.com",
+  projectId: "finddrive-b009d",
+  storageBucket: "finddrive-b009d.firebasestorage.app",
+  messagingSenderId: "8431552805",
+  appId: "1:8431552805:web:6708f74b843ff5b94332cc"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function initials(name) {
+  return (name||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+}
+function showToast(title, text = '') {
+  const wrap = document.getElementById('toast-wrap');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<i class="ti ti-bell toast-icon"></i><div><div class="toast-title">${esc(title)}</div>${text ? `<div class="toast-text">${esc(text)}</div>` : ''}</div>`;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+const BK_LABEL = { pending:'Очікує', confirmed:'Підтверджено', cancelled:'Скасовано', reschedule_requested:'Перенос запитано' };
+const BK_ICON  = { pending:'ti-clock', confirmed:'ti-circle-check', cancelled:'ti-circle-x', reschedule_requested:'ti-calendar-time' };
+function bkDateStr(b) {
+  const [y,m,day] = (b.date||'').split('-');
+  return day ? `${day}.${m}.${y}` : b.date||'—';
+}
+function bkStatusBadge(status) {
+  return `<span class="bk-status ${status}"><i class="ti ${BK_ICON[status]||'ti-clock'}"></i>${BK_LABEL[status]||status}</span>`;
+}
+
+async function registerAdminFcm() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if (Notification.permission === 'default') {
+    const p = await Notification.requestPermission();
+    if (p !== 'granted') return;
+  }
+  if (Notification.permission !== 'granted') return;
+  try {
+    let reg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js').catch(() => null);
+    if (!reg) reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => null);
+    if (!reg) return;
+    const { getMessaging, getToken } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (token && auth.currentUser) {
+      await setDoc(doc(db, 'users', auth.currentUser.uid), { email: auth.currentUser.email, fcmToken: token }, { merge: true });
+    }
+  } catch (e) { console.warn('FCM token:', e.message); }
+}
+
+onAuthStateChanged(auth, user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    document.getElementById('auth-gate').style.display   = 'none';
+    document.getElementById('admin-panel').style.display = '';
+    document.getElementById('btn-signout').style.display = '';
+    registerAdminFcm();
+    listenInstructors();
+    listenUsers();
+    listenBookings();
+    listenProblems();
+  } else if (user) {
+    document.getElementById('auth-gate').innerHTML = `
+      <img class="gate-logo" src="logo192.png" alt="">
+      <div class="denied">
+        <h3>Доступ заборонено</h3>
+        <p>Ви увійшли як <b>${esc(user.email)}</b>.<br>Ця сторінка тільки для власника сайту.</p>
+        <button class="btn-signout" onclick="window._signOut()">Вийти</button>
+      </div>`;
+  } else {
+    document.getElementById('auth-gate').style.display   = '';
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('btn-signout').style.display = 'none';
+  }
+});
+
+window._signOut = () => signOut(auth);
+document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
+document.getElementById('btn-google-login').addEventListener('click', () => {
+  signInWithPopup(auth, provider).catch(console.error);
+});
+
+window._switchTab = function(tab) {
+  ['instr','users','bookings','problems'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === tab ? '' : 'none';
+    document.getElementById('tab-btn-'+t).classList.toggle('active', t === tab);
+  });
+};
+
+// ===== ІНСТРУКТОРИ =====
+let _instrFirstSnap = true;
+function listenInstructors() {
+  onSnapshot(
+    query(collection(db, 'instructors'), orderBy('createdAt', 'desc')),
+    snap => {
+      if (!_instrFirstSnap) {
+        snap.docChanges().forEach(ch => {
+          if (ch.type !== 'added') return;
+          const d = ch.doc.data();
+          if (d.status !== 'pending') return;
+          showToast('Нова анкета інструктора!', `${d.name || 'Інструктор'} — ${d.phone || d.email || ''}`);
+        });
+      }
+      _instrFirstSnap = false;
+
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const pending  = all.filter(i => i.status === 'pending');
+      const approved = all.filter(i => i.status === 'approved');
+      const rejected = all.filter(i => i.status === 'rejected');
+
+      const badge = document.getElementById('count-badge-instr');
+      if (pending.length) { badge.textContent = pending.length + ' нових'; badge.style.display = ''; }
+      else badge.style.display = 'none';
+
+      renderCriticalMass(approved);
+
+      const list = document.getElementById('instr-list');
+      list.innerHTML = [
+        renderInstrGroup('На розгляді', pending,  'pending'),
+        renderInstrGroup('Активні',      approved, 'approved'),
+        renderInstrGroup('Відхилені',    rejected, 'rejected'),
+      ].join('') || '<div class="empty">Даних немає</div>';
+    },
+    err => { document.getElementById('instr-list').innerHTML = '<div class="empty">Помилка завантаження</div>'; console.error(err); }
+  );
+}
+
+// Датчик критичної маси — тригер запуску підписки (MONETIZATION.md §2).
+// Поки що суто інформаційний: рахує активних інструкторів проти цільового порога.
+// Поріг зберігаємо в localStorage, щоб коригувати без деплою (клік по числу праворуч).
+const CM_TARGET_DEFAULT = 30;
+function cmTarget() {
+  const v = parseInt(localStorage.getItem('fd_cm_target'), 10);
+  return Number.isFinite(v) && v > 0 ? v : CM_TARGET_DEFAULT;
+}
+function renderCriticalMass(approved) {
+  const el = document.getElementById('cm-gauge');
+  if (!el) return;
+  const active   = approved.length;
+  const verified = approved.filter(i => i.verified).length;
+  const target   = cmTarget();
+  const pct      = Math.min(100, Math.round(active / target * 100));
+  const ready    = active >= target;
+  el.innerHTML = `
+    <div class="cm-gauge">
+      <div class="cm-gauge-top">
+        <div class="cm-gauge-title"><i class="ti ti-flag"></i> Критична маса — тригер запуску підписки</div>
+        <button class="cm-gauge-target" onclick="window._cmEditTarget()" title="Змінити ціль">ціль: ${target} · змінити</button>
+      </div>
+      <div class="cm-gauge-stats">
+        <div class="cm-stat"><span class="cm-stat-num">${active}</span><span class="cm-stat-lbl">активних</span></div>
+        <div class="cm-stat"><span class="cm-stat-num">${verified}</span><span class="cm-stat-lbl">верифікованих</span></div>
+        <div class="cm-stat muted"><span class="cm-stat-num">${pct}%</span><span class="cm-stat-lbl">до цілі</span></div>
+      </div>
+      <div class="cm-bar"><div class="cm-bar-fill ${ready?'ready':''}" style="width:${pct}%"></div></div>
+      <div class="cm-gauge-note ${ready?'ready':''}">${ready
+        ? '✓ Критичну масу досягнуто — можна планувати запуск підписки (заблаговременне повідомлення інструкторам, оферта). Див. MONETIZATION.md.'
+        : `Ще ${target - active} активних до порога. Монетизацію не вмикаємо, доки не набрано аудиторію.`}</div>
+    </div>`;
+}
+window._cmEditTarget = function() {
+  const cur = cmTarget();
+  const next = prompt('Цільова кількість активних інструкторів для запуску підписки:', String(cur));
+  if (next === null) return;
+  const n = parseInt(next, 10);
+  if (Number.isFinite(n) && n > 0) { localStorage.setItem('fd_cm_target', String(n)); location.reload(); }
+};
+
+function renderInstrGroup(label, list, status) {
+  if (!list.length) return '';
+  const cnt = status === 'pending' ? `<span class="admin-badge-cnt">${list.length}</span>` : `<span style="font-size:11px;color:var(--text-muted)">${list.length}</span>`;
+  return `<div class="admin-header">${label} ${cnt}</div>${list.map(renderInstrCard).join('')}`;
+}
+
+function renderInstrCard(instr) {
+  const id = instr.id;
+  const ini = initials(instr.name);
+  const statusCls = instr.status === 'approved' ? 'approved' : instr.status === 'rejected' ? 'rejected' : 'pending';
+  const statusLabel = { pending:'На розгляді', approved:'Активний', rejected:'Відхилено' }[instr.status] || instr.status;
+  const days = Array.isArray(instr.days) ? instr.days.join(', ') : (instr.days||'—');
+  const tags = Array.isArray(instr.tags) ? instr.tags : [];
+  const tsc  = Array.isArray(instr.tscKnown) ? instr.tscKnown.join(', ') : (instr.tscKnown||'—');
+  const mps  = Array.isArray(instr.meetingPoints) ? instr.meetingPoints : [];
+  const created = instr.createdAt?.toDate?.() ? instr.createdAt.toDate().toLocaleDateString('uk-UA') : '—';
+
+  const tagsHtml = tags.length
+    ? tags.map(t => `<span class="admin-tag" style="background:#f0f5f0;color:#4a6a5a;border-color:#dde8dd">${esc(t)}</span>`).join('')
+    : '<span style="color:var(--text-hint);font-size:11px">—</span>';
+  const mpsHtml = mps.length
+    ? mps.map((pt,i) => `<div style="font-size:11px;color:var(--text-muted);margin-top:2px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${esc(pt.label||pt.name||`Точка ${i+1}`)} <span style="color:var(--text-hint)">${pt.lat?.toFixed?.(5)||''}, ${pt.lng?.toFixed?.(5)||''}</span></div>`).join('')
+    : '<span style="color:var(--text-hint);font-size:11px">—</span>';
+  const photoHtml = (instr.photo || instr.carPhoto) ? `
+    <div class="admin-photos">
+      ${instr.photo    ? `<div><img class="admin-photo" src="${esc(instr.photo)}" alt=""><div class="admin-photo-label">Інструктор</div></div>` : ''}
+      ${instr.carPhoto ? `<div><img class="admin-photo" src="${esc(instr.carPhoto)}" alt=""><div class="admin-photo-label">Авто</div></div>` : ''}
+    </div>` : '';
+
+  const verifyBtn = instr.status === 'approved' ? `<button class="admin-btn ${instr.verified?'reject':'approve'}" onclick="window._adminToggleVerify('${id}',${!instr.verified})" style="flex:0;white-space:nowrap"><i class="ti ti-${instr.verified?'shield-off':'shield-check'}"></i> ${instr.verified?'Зняти верифікацію':'Верифікувати'}</button>` : '';
+  const deleteBtn = `<button class="admin-btn delete" onclick="window._adminDeleteInstr('${id}','${esc((instr.name||'').replace(/'/g,''))}')"><i class="ti ti-trash"></i> Видалити</button>`;
+  const actionsHtml = instr.status === 'pending' ? `
+    <div class="admin-actions">
+      <button class="admin-btn approve" onclick="window._adminApprove('${id}')"><i class="ti ti-check"></i> Підтвердити</button>
+      <button class="admin-btn reject"  onclick="window._adminReject('${id}')"><i class="ti ti-x"></i> Відхилити</button>
+    </div>
+    <div class="admin-actions" style="margin-top:4px">${deleteBtn}</div>` : instr.status === 'approved' ? `
+    <div class="admin-actions">
+      ${verifyBtn}
+      <button class="admin-btn reject" onclick="window._adminReject('${id}')"><i class="ti ti-ban"></i> Деактивувати</button>
+    </div>
+    <div class="admin-actions" style="margin-top:4px">${deleteBtn}</div>` : `
+    <div class="admin-actions">
+      <button class="admin-btn approve" onclick="window._adminApprove('${id}')"><i class="ti ti-rotate-clockwise"></i> Відновити</button>
+      ${deleteBtn}
+    </div>`;
+
+  return `
+    <div class="admin-card" id="adm-instr-${id}">
+      <div class="admin-card-head" onclick="document.getElementById('adm-instr-${id}').classList.toggle('open')">
+        ${instr.photo ? `<img class="admin-card-avatar" src="${esc(instr.photo)}" alt="">` : `<div class="admin-card-avatar">${esc(ini)}</div>`}
+        <div class="admin-card-main">
+          <div class="admin-card-name">${esc(instr.name||'—')}</div>
+          <div class="admin-card-sub">${esc(instr.phone||'')}${instr.phone&&instr.area?' · ':''}${esc(instr.area||'')}${instr.price?' · '+instr.price+' грн/год':''}</div>
+        </div>
+        <span class="admin-status ${statusCls}">${statusLabel}</span>
+        <i class="ti ti-chevron-down admin-card-arrow"></i>
+      </div>
+      <div class="admin-card-body">
+        ${photoHtml}
+        <div class="admin-field"><div class="admin-field-label">Email</div><div class="admin-field-val">${esc(instr.email||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Телефон</div><div class="admin-field-val">${esc(instr.phone||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Район</div><div class="admin-field-val">${esc(instr.area||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Авто</div><div class="admin-field-val">${esc(instr.car||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">КПП</div><div class="admin-field-val">${esc(instr.gearbox||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Ціна</div><div class="admin-field-val">${instr.price ? esc(instr.price)+' грн/год' : '—'}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Стаж</div><div class="admin-field-val">${instr.experience ? esc(instr.experience)+' р.' : '—'}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Атестат №</div><div class="admin-field-val">${esc(instr.certNumber||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Атестат дійсний до</div><div class="admin-field-val">${instr.certExpiry?esc(instr.certExpiry.split('-').reverse().join('.')):'—'}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Дні</div><div class="admin-field-val">${esc(days)}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Час</div><div class="admin-field-val">${esc(instr.time_from||'—')} — ${esc(instr.time_to||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">ТСЦ</div><div class="admin-field-val">${esc(tsc)}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Теги</div><div class="admin-field-val">${tagsHtml}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Про себе</div><div class="admin-field-val" style="white-space:pre-line">${esc(instr.about||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Точки</div><div class="admin-field-val">${mpsHtml}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Локація</div><div class="admin-field-val">${instr.lat?.toFixed?.(5)||'—'}, ${instr.lng?.toFixed?.(5)||'—'} <a href="https://maps.google.com/?q=${instr.lat},${instr.lng}" target="_blank" style="color:#185fa5;font-size:11px;margin-left:4px"><i class="ti ti-external-link"></i></a></div></div>
+        <div class="admin-field"><div class="admin-field-label">userId</div><div class="admin-field-val" style="font-size:10px;color:var(--text-hint);word-break:break-all">${esc(instr.userId||'—')}</div></div>
+        <div class="admin-field"><div class="admin-field-label">Дата</div><div class="admin-field-val">${esc(created)}</div></div>
+        ${actionsHtml}
+      </div>
+    </div>`;
+}
+
+window._adminApprove = async (id) => {
+  try { await updateDoc(doc(db, 'instructors', id), { status: 'approved' }); }
+  catch(e) { alert('Помилка: ' + (e.message||e)); }
+};
+window._adminReject = async (id) => {
+  try { await updateDoc(doc(db, 'instructors', id), { status: 'rejected' }); }
+  catch(e) { alert('Помилка: ' + (e.message||e)); }
+};
+window._adminToggleVerify = async (id, value) => {
+  try { await updateDoc(doc(db, 'instructors', id), { verified: value }); }
+  catch(e) { alert('Помилка: ' + (e.message||e)); }
+};
+window._adminDeleteInstr = async (id, name) => {
+  if (!confirm(`Видалити інструктора «${name}»? Дію не можна скасувати.`)) return;
+  try { await deleteDoc(doc(db, 'instructors', id)); }
+  catch(e) { alert('Помилка: ' + (e.message||e)); }
+};
+
+// ===== УЧНІ =====
+function listenUsers() {
+  // без orderBy('createdAt') — Firestore виключає документи без цього поля (напр. вхід через Google)
+  onSnapshot(collection(db, 'users'), snap => {
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const list = document.getElementById('users-list');
+    list.innerHTML = users.length ? `
+      <div class="admin-header">Учні <span style="font-size:11px;color:var(--text-muted)">${users.length}</span></div>
+      ${users.map(u => `
+        <div class="admin-card" id="adm-u-${u.id}">
+          <div class="admin-card-head" onclick="document.getElementById('adm-u-${u.id}').classList.toggle('open')">
+            ${u.photo ? `<img class="admin-card-avatar" src="${esc(u.photo)}" alt="">` : `<div class="admin-card-avatar">${esc(((u.name||u.email||'?')[0]).toUpperCase())}</div>`}
+            <div class="admin-card-main">
+              <div class="admin-card-name">${esc(u.name||'Без імені')}</div>
+              <div class="admin-card-sub">${esc(u.email||u.id)}</div>
+            </div>
+            <i class="ti ti-chevron-down admin-card-arrow"></i>
+          </div>
+          <div class="admin-card-body">
+            <div class="admin-field"><div class="admin-field-label">Email</div><div class="admin-field-val">${esc(u.email||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Телефон</div><div class="admin-field-val">${esc(u.phone||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">UID</div><div class="admin-field-val" style="font-size:10px;color:var(--text-hint);word-break:break-all">${esc(u.id)}</div></div>
+            <div class="admin-actions"><button class="admin-btn delete" onclick="window._adminDeleteUser('${u.id}','${esc((u.name||u.email||'').replace(/'/g,''))}')"><i class="ti ti-trash"></i> Видалити учня</button></div>
+          </div>
+        </div>`).join('')}` : '<div class="empty">Учнів ще немає</div>';
+  }, err => { document.getElementById('users-list').innerHTML = '<div class="empty">Помилка завантаження</div>'; console.error(err); });
+}
+
+window._adminDeleteUser = async (id, name) => {
+  if (!confirm(`Видалити учня «${name}»? Дію не можна скасувати.`)) return;
+  try { await deleteDoc(doc(db, 'users', id)); }
+  catch(e) { alert('Помилка: ' + (e.message||e)); }
+};
+
+// ===== ЗАПИСИ =====
+function listenBookings() {
+  onSnapshot(
+    query(collection(db, 'bookings'), orderBy('createdAt', 'desc')),
+    snap => {
+      const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list = document.getElementById('bookings-list');
+      if (!bookings.length) { list.innerHTML = '<div class="empty">Записів ще немає</div>'; return; }
+      const cnt = `<span style="font-size:11px;color:var(--text-muted)">${bookings.length}</span>`;
+      list.innerHTML = `<div class="admin-header">Усі записи ${cnt}</div>` + bookings.map(b => {
+        const dateStr = bkDateStr(b);
+        const mpLbl = b.meetingPoint?.label || '';
+        return `<div class="admin-card" id="adm-bk-${b.id}">
+          <div class="admin-card-head" onclick="document.getElementById('adm-bk-${b.id}').classList.toggle('open')">
+            <div class="admin-card-avatar"><i class="ti ti-calendar-event"></i></div>
+            <div class="admin-card-main">
+              <div class="admin-card-name">${esc(b.clientName||b.clientEmail||'Учень')} → ${esc(b.instructorName||'Інструктор')}</div>
+              <div class="admin-card-sub">${esc(dateStr)} о ${esc(b.time||'')} · ${b.duration||60} хв</div>
+            </div>
+            ${bkStatusBadge(b.status)}
+            <i class="ti ti-chevron-down admin-card-arrow"></i>
+          </div>
+          <div class="admin-card-body">
+            <div class="admin-field"><div class="admin-field-label">Учень</div><div class="admin-field-val">${esc(b.clientName||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Тел. учня</div><div class="admin-field-val">${esc(b.clientPhone||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Email учня</div><div class="admin-field-val">${esc(b.clientEmail||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Інструктор</div><div class="admin-field-val">${esc(b.instructorName||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Тел. інструктора</div><div class="admin-field-val">${esc(b.instructorPhone||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Дата/час</div><div class="admin-field-val">${esc(dateStr)} о ${esc(b.time||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Тривалість</div><div class="admin-field-val">${b.duration||60} хв</div></div>
+            <div class="admin-field"><div class="admin-field-label">Місце зустрічі</div><div class="admin-field-val">${esc(mpLbl||'—')}</div></div>
+            <div class="admin-field"><div class="admin-field-label">Статус</div><div class="admin-field-val">${bkStatusBadge(b.status)}</div></div>
+          </div>
+        </div>`;
+      }).join('');
+    },
+    err => { document.getElementById('bookings-list').innerHTML = '<div class="empty">Помилка завантаження</div>'; console.error(err); }
+  );
+}
+
+// ===== ПРОБЛЕМИ =====
+function listenProblems() {
+  onSnapshot(
+    query(collection(db, 'problems'), orderBy('createdAt', 'desc')),
+    snap => {
+      const list  = document.getElementById('problems-list');
+      const badge = document.getElementById('count-badge-problems');
+      const newCount = snap.docs.filter(d => d.data().status !== 'resolved').length;
+      if (snap.empty) {
+        list.innerHTML = '<div class="empty">🎉 Звернень немає</div>';
+        badge.style.display = 'none';
+        return;
+      }
+      if (newCount > 0) { badge.textContent = newCount + ' нових'; badge.style.display = ''; }
+      else badge.style.display = 'none';
+      list.innerHTML = snap.docs.map(renderProblemCard).join('');
+    },
+    err => {
+      document.getElementById('problems-list').innerHTML = '<div class="empty">Не вдалось завантажити звернення</div>';
+      console.error('listenProblems error:', err.message);
+    }
+  );
+}
+
+function renderProblemCard(d) {
+  const p = d.data();
+  const resolved = p.status === 'resolved';
+  const dateStr = p.createdAt?.toDate?.().toLocaleString('uk-UA', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' }) || '—';
+  return `<div class="problem-card${resolved ? ' resolved' : ''}" id="p-${d.id}">
+    <div class="problem-text">${esc(p.text)}</div>
+    <div class="problem-meta">
+      ${p.contact ? `<span>📞 ${esc(p.contact)}</span>` : ''}
+      ${p.userEmail ? `<span>✉️ ${esc(p.userEmail)}</span>` : ''}
+      <span>${dateStr}</span>
+      ${resolved ? '<span>· вирішено</span>' : ''}
+    </div>
+    <div class="problem-actions">
+      ${resolved
+        ? `<button class="btn-reject" onclick="window._reopenProblem('${d.id}')">↺ Повернути</button>`
+        : `<button class="btn-approve" onclick="window._resolveProblem('${d.id}')">✓ Вирішено</button>`}
+      <button class="btn-reject" onclick="window._deleteProblem('${d.id}')">✗ Видалити</button>
+    </div>
+  </div>`;
+}
+
+window._resolveProblem = async id => { await updateDoc(doc(db, 'problems', id), { status: 'resolved' }); };
+window._reopenProblem  = async id => { await updateDoc(doc(db, 'problems', id), { status: 'new' }); };
+window._deleteProblem  = async id => {
+  if (confirm('Видалити це звернення?')) await deleteDoc(doc(db, 'problems', id));
+};
+</script>
+</body>
+</html>
